@@ -3,10 +3,10 @@
 #include "lineSearch.h"
 #define sigma 1.0
 #define beta 1.0
-
+#define lambda 1.0
 
 /*
- *Computes inner product of two given vectors A,B of size 
+ *Computes inner product of two given vectors A,B of size
 */
 float innerProduct(float *A,float* B,int size){
 	float val=0;
@@ -17,7 +17,7 @@ float innerProduct(float *A,float* B,int size){
 	return val;
 }
 
-void likelihood_item(float *Q,bool *selected,float *user_sum,float **items,float **users,int k,float lambda,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems){
+void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int k,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems){
 	//allotted contains items allotted to the node
 	//numItems has items allotted to the node
 	//totalItems has total number of items in the dataset
@@ -55,7 +55,7 @@ void linesearch(float **items, float *user_sum, float**users, int k, float **gra
 		newItems[i]=new float[k];
 		tempItems[i]=new float[k];
 	}
-	
+
 	bool *active=new bool[numItems];
 	memset(active,true,numItems);
 	float *Q=new float[numItems];
@@ -71,7 +71,7 @@ void linesearch(float **items, float *user_sum, float**users, int k, float **gra
 					newItems[allotted[i]][j]=items[allotted[i]][j]-alpha*gradient[allotted[i]][j];
 		}
 		likelihood_item(Q2,active,user_sum,newItems,users,lambda,numItems,item_sparse_csr_r,user_sparse_csr_r,allotted,totalItems);
-		
+
 		#pragma omp parallel
 		{
 			#pragma omp for
@@ -86,7 +86,7 @@ void linesearch(float **items, float *user_sum, float**users, int k, float **gra
 							active[i]=false;
 							removed[omp_get_thread_num()]++;
 						}
-					}			
+					}
 				}
 	        }
 		alpha=alpha*beta;
@@ -94,6 +94,15 @@ void linesearch(float **items, float *user_sum, float**users, int k, float **gra
 		for(int i=0;i<omp_get_max_threads();i++)
 			sum+=removed[i];
 		if(sum==numItems)
-			flag=true;		   
+			flag=true;
 	}
+	delete[] active;
+	delete[] Q;
+	delete[] Q2;
+	for(int i=0;i<totalItems;i++){
+        delete[] newItems[i];
+        delete[]  tempItems[i];
+    }
+    delete[] newItems;
+    delete[] tempItems;
 }
