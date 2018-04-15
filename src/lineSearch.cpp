@@ -7,10 +7,11 @@
 */
 float innerProduct(float *A,float* B,int size){
 	float val=0;
-#pragma omp parallel for reduction(+:val){
+#pragma omp parallel for reduction(+:val)
+	{
 	for(int i=0;i<size;i++)
 		val=val+A[i]*B[i];
-}
+	}
 	return val;
 }
 
@@ -20,7 +21,6 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 	//totalItems has total number of items in the dataset
 	//k is number of co-clusters
 	for(int i=0;i<numItems;i++){
-
 		if(selected[i]==true){
 			Q[i]=innerProduct(items[allotted[i]],user_sum,k)+lambda*innerProduct(items[allotted[i]],items[allotted[i]],k);
 			int start=item_sparse_csr_r[allotted[i]];
