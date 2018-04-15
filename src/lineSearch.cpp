@@ -1,9 +1,6 @@
-#include <iostream>
 #include <omp.h>
 #include "lineSearch.h"
-#define sigma 1.0
-#define beta 1.0
-#define lambda 1.0
+
 
 /*
  *Computes inner product of two given vectors A,B of size
@@ -17,7 +14,7 @@ float innerProduct(float *A,float* B,int size){
 	return val;
 }
 
-void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int k,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems){
+void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems){
 	//allotted contains items allotted to the node
 	//numItems has items allotted to the node
 	//totalItems has total number of items in the dataset
@@ -42,7 +39,7 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 }
 
 
-void linesearch(float **items, float *user_sum, float**users, int k, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c,float lambda){
+void linesearch(float **items, float *user_sum, float**users, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c,float lambda){
 	//numItems is number of items allotted to the node
 	//totalItems is number of items in all
 	//allotted contains items allotted to the node
