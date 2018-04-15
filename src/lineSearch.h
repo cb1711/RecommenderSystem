@@ -9,6 +9,6 @@ void likelihood_item(float *Q,bool *selected,float *user_sum,float **items,float
 
 
 /*Function for linesearch */
-void linesearch(float **items, float *user_sum, float**users, int k, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c,float lambda)
+void linesearch(float **items, float *user_sum, float**users, int k, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c,float lambda);
 
 #endif
