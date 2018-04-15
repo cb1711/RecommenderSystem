@@ -4,7 +4,7 @@
 #include <iostream>
 #include <omp.h>
 #include <math.h>
-
+#include "likelihood.h"
 /*
  *Computes inner product of two given vectors A,B of size 
 */
