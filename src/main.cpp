@@ -39,33 +39,30 @@ int main(int argc,char* argv){
 	MPI_Comm_size(MPI_COMM_WORLD,&numProcs);//Set up different communicators when work broadcast has to be removed
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
-
-
-
 	int *all_items,*all_users;
-	int *alloted_items,*alloted_users;
+	int *allotted_items,*allotted_users;
 
 	//Divide work
 	if(rank==MASTER){ //Use better method for alloting
-        *all_items=new int[numItems];
-        *all_users=new int[numUsers];
-        for(int i=0;i<numItems;i++){
-            alloted_items[i]=i;
-        }
-        for(int i=0;i<numUsers;i++){
-            alloted_items[i]=i;
-        }
-    }
-    alloted_items=new int[numItems/numProcs + 1];
-    alloted_users=new int[numUsers/numProcs + 1];
-    MPI_Scatter(all_users,numUsers/numProcs+1,MPI_INT,alloted_users,numUsers/numProcs+1,MPI_INT,MASTER,MPI_COMM_WORLD);
-    MPI_Scatter(all_items,numItems/numProcs+1,MPI_INT,alloted_items,numItems/numProcs+1,MPI_INT,MASTER,MPI_COMM_WORLD);
-    float **fi,**fu;
-    int count_user,count_item;
-    count_user=(rank==numProcs-1)?(numUsers-(numProcs-1)*(numUsers/numProcs+1)):numUsers/numProcs+1;
-    count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
-    //Call ocular
-    ocular(numItems,numUsers,csr_item,users,csr_user,items,fi,fu,alloted_users,alloted_items,count_user,count_item);
+        	*all_items=new int[numItems];
+        	*all_users=new int[numUsers];
+        	for(int i=0;i<numItems;i++){
+            		allotted_items[i]=i;
+        	}
+        	for(int i=0;i<numUsers;i++){
+        	    allotted_items[i]=i;
+        	}
+    	}	
+    	allotted_items=new int[numItems/numProcs + 1];
+    	allotted_users=new int[numUsers/numProcs + 1];
+    	MPI_Scatter(all_users,numUsers/numProcs+1,MPI_INT,alloted_users,numUsers/numProcs+1,MPI_INT,MASTER,MPI_COMM_WORLD);
+    	MPI_Scatter(all_items,numItems/numProcs+1,MPI_INT,alloted_items,numItems/numProcs+1,MPI_INT,MASTER,MPI_COMM_WORLD);
+    	float **fi,**fu;
+    	int count_user,count_item;
+    	count_user=(rank==numProcs-1)?(numUsers-(numProcs-1)*(numUsers/numProcs+1)):numUsers/numProcs+1;
+    	count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
+    	//Call ocular
+    	ocular(numItems,numUsers,csr_item,users,csr_user,items,fi,fu,allotted_users,allotted_items,count_user,count_item);
 
 	MPI_Finalize();
 	return 0;
