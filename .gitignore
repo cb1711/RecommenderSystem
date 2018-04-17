@@ -1,0 +1,8 @@
+# Manually generated test files
+*.in
+
+# Executables
+*.out
+
+# VS Code
+.vscode/
