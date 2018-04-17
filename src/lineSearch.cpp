@@ -1,6 +1,7 @@
 #include <omp.h>
 #include "lineSearch.h"
-
+#include <cmath>
+#include <cstring>
 
 /*
  *Computes inner product of two given vectors A,B of size
@@ -8,10 +9,8 @@
 float innerProduct(float *A,float* B,int size){
 	float val=0;
 #pragma omp parallel for reduction(+:val)
-	{
 	for(int i=0;i<size;i++)
 		val=val+A[i]*B[i];
-	}
 	return val;
 }
 
@@ -22,7 +21,7 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 	//k is number of co-clusters
 	for(int i=0;i<numItems;i++){
 		if(selected[i]==true){
-			Q[i]=innerProduct(items[allotted[i]],user_sum,k)+lambda*innerProduct(items[allotted[i]],items[allotted[i]],k);
+			Q[i]=innerProduct(items[allotted[i]],user_sum,CLUSTERS)+LAMBDA*innerProduct(items[allotted[i]],items[allotted[i]],CLUSTERS);
 			int start=item_sparse_csr_r[allotted[i]];
 			int end;
 			if(allotted[i]!=totalItems)
@@ -31,7 +30,7 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 				end=totalItems;
 			for(int j=start;j<end;j++){
 				int uid=user_sparse_csr_c[j];
-				float x=innerProduct(items[allotted[i]],users[uid],k);
+				float x=innerProduct(items[allotted[i]],users[uid],CLUSTERS);
 				Q[i]=Q[i]-x-log(1-pow(M_E,x));//Replace with efficient implementation of e^x
 			}
 		}
@@ -39,54 +38,54 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 }
 
 
-void linesearch(float **items, float *user_sum, float**users, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c,float lambda){
+void linesearch(float **items, float *user_sum, float**users, float **gradient, int numItems, int *allotted, int totalItems, int* item_sparse_csr_r, int *user_sparse_csr_c){
 	//numItems is number of items allotted to the node
 	//totalItems is number of items in all
 	//allotted contains items allotted to the node
 	float **newItems,**tempItems;
-	tempItems=new float[totalItems];
-	newItems=new float[totalItems];
+	tempItems=new float*[totalItems];
+	newItems=new float*[totalItems];
 	int removed[omp_get_max_threads()];
 	memset(removed,0,omp_get_max_threads());
 	for(int i=0;i<totalItems;i++){
-		newItems[i]=new float[k];
-		tempItems[i]=new float[k];
+		newItems[i]=new float[CLUSTERS];
+		tempItems[i]=new float[CLUSTERS];
 	}
 
 	bool *active=new bool[numItems];
 	memset(active,true,numItems);
 	float *Q=new float[numItems];
 	float *Q2=new float[numItems];
-	likelihood_item(Q,active,user_sum,items,users,lambda,numItems,item_sparse_csr_r,user_sparse_csr_r,allotted,totalItems);
+	likelihood(Q,active,user_sum,items,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
 	float alpha=1;
 	bool flag=true;
 	while(flag){
 		#pragma omp parallel for
 		for(int i=0;i<numItems;i++){
 			if(active[i])
-				for(int j=0;j<k;j++)
+				for(int j=0;j<CLUSTERS;j++)
 					newItems[allotted[i]][j]=items[allotted[i]][j]-alpha*gradient[allotted[i]][j];
 		}
-		likelihood_item(Q2,active,user_sum,newItems,users,lambda,numItems,item_sparse_csr_r,user_sparse_csr_r,allotted,totalItems);
+		likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
 
 		#pragma omp parallel
 		{
 			#pragma omp for
 				for(int i=0;i<numItems;i++){
-					for(int j=0;j<k;j++)
+					for(int j=0;j<CLUSTERS;j++)
 						tempItems[i][j]=newItems[i][j]-items[i][j];
 				}
 			#pragma omp for
 				for(int i=0;i<numItems;i++){
 					if (active[i]){
-						if (Q1[i]-Q[i]<=sigma*innerProduct(gradient[i],tempItems[i],k)){
+						if (Q2[i]-Q[i]<=SIGMA*innerProduct(gradient[i],tempItems[i],CLUSTERS)){
 							active[i]=false;
 							removed[omp_get_thread_num()]++;
 						}
 					}
 				}
 	        }
-		alpha=alpha*beta;
+		alpha=alpha*BETA;
 		int sum=0;
 		for(int i=0;i<omp_get_max_threads();i++)
 			sum+=removed[i];

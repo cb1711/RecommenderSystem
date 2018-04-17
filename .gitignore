@@ -6,3 +6,6 @@
 
 # VS Code
 .vscode/
+
+# Pre-compiled header
+.h.gch

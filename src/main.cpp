@@ -1,12 +1,11 @@
 #include <iostream>
-#include "gradient.h"
-#include "lineSearch.h"
 #include <mpi.h>
 #include "ocular.h"
 #define MASTER 0
 
 using namespace std;
-int main(int argc,char* argv){
+
+int main(int argc,char* argv[]){
 
 	int numUsers,numItems,numRatings;
 	cin >> numUsers>>numItems>>numRatings;
@@ -62,13 +61,13 @@ int main(int argc,char* argv){
 
 	//Divide work
 	if(rank==MASTER){ //Use better method for alloting
-        *all_items=new int[numItems];
-        *all_users=new int[numUsers];
+        all_items=new int[numItems];
+        all_users=new int[numUsers];
         for(int i=0;i<numItems;i++){
-            alloted_items[i]=i;
+            all_items[i]=i;
         }
         for(int i=0;i<numUsers;i++){
-            alloted_items[i]=i;
+            all_users[i]=i;
         }
     }
     alloted_items=new int[numItems/numProcs + 1];
@@ -80,7 +79,7 @@ int main(int argc,char* argv){
     count_user=(rank==numProcs-1)?(numUsers-(numProcs-1)*(numUsers/numProcs+1)):numUsers/numProcs+1;
     count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
     //Call ocular
-    ocular(numItems,numUsers,csr_item,users,csr_user,items,fi,fu,alloted_users,alloted_items,count_user,count_item);
+    ocular(numItems,numUsers,csr_items,users,csr_users,items,fi,fu,alloted_users,alloted_items,count_user,count_item);
 	MPI_Finalize();
 	return 0;
 }
