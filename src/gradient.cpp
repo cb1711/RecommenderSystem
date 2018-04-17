@@ -2,7 +2,7 @@
  * Evaluate gradient for cyclic block coordinate descent
  */
 
-#include <omp.h>
+#include "omp.h"
 #include "lineSearch.h"
 #include "gradient.h"
 
