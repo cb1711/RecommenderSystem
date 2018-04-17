@@ -26,18 +26,21 @@ int main(int argc,char* argv){
 		int curr_user;
 		cin >> curr_user;
 		curr_user--;
-		cin >> users[i];
-		users[i]--;
-		int curr_item;
-		cin >> curr_item;
-		curr_item--;
-		while (prevItem<curr_item){
-			prevItem++;
-			csr_items[prevItem] = i;
-		}
 		while (prevUser<curr_user){
             prevUser++;
             csr_users[prevUser] = i;
+		}
+	}
+	for(int i=0;i<numRatings;i++){
+
+		int curr_item;
+		cin >> curr_item;
+		curr_item--;
+		cin >> users[i];
+		users[i]--;
+		while (prevItem<curr_item){
+			prevItem++;
+			csr_items[prevItem] = i;
 		}
 	}
 	while (prevItem<=numItems){
@@ -78,7 +81,6 @@ int main(int argc,char* argv){
     count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
     //Call ocular
     ocular(numItems,numUsers,csr_item,users,csr_user,items,fi,fu,alloted_users,alloted_items,count_user,count_item);
-
 	MPI_Finalize();
 	return 0;
 }
