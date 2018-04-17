@@ -2,7 +2,6 @@
 #include "lineSearch.h"
 #include <cmath>
 #include <cstring>
-
 /*
  *Computes inner product of two given vectors A,B of size
 */
@@ -46,20 +45,21 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 	tempItems=new float*[totalItems];
 	newItems=new float*[totalItems];
 	int removed[omp_get_max_threads()];
-	memset(removed,0,omp_get_max_threads());
+	memset(removed,0,sizeof removed);
 	for(int i=0;i<totalItems;i++){
 		newItems[i]=new float[CLUSTERS];
 		tempItems[i]=new float[CLUSTERS];
 	}
 
 	bool *active=new bool[numItems];
-	memset(active,true,numItems);
+	memset(active,true,numItems*sizeof(bool));
 	float *Q=new float[numItems];
 	float *Q2=new float[numItems];
 	likelihood(Q,active,user_sum,items,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
 	float alpha=1;
 	bool flag=true;
 	while(flag){
+
 		#pragma omp parallel for
 		for(int i=0;i<numItems;i++){
 			if(active[i])
@@ -90,7 +90,7 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 		for(int i=0;i<omp_get_max_threads();i++)
 			sum+=removed[i];
 		if(sum==numItems)
-			flag=true;
+			flag=false;
 	}
 	delete[] active;
 	delete[] Q;

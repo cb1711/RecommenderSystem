@@ -2,9 +2,9 @@
 #define _lineSearch_h
 
 
-#define SIGMA 1.0
-#define BETA 1.0
-#define LAMBDA 1.0
+#define SIGMA 10.0
+#define BETA 0.9
+#define LAMBDA 7.0
 #define CLUSTERS 20
 /*Returns the inner product of the given arrays A and B of size size*/
 float innerProduct(float* A,float *B,int size);
