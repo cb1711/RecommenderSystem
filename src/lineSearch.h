@@ -5,7 +5,7 @@
 #define SIGMA 0.8
 #define BETA 0.5
 #define LAMBDA 2.0
-#define CLUSTERS 2	
+#define CLUSTERS 10	
 
 /*Returns the inner product of the given arrays A and B of size size*/
 float innerProduct(float* A,float *B,int size);

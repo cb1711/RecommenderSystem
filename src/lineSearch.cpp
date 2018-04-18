@@ -18,7 +18,7 @@ float innerProduct(float *A,float* B,int size){
     }
 	return val;
 }
-void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems,bool &flag){
+void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems){
 	//allotted contains items allotted to the node
 	//numItems has items allotted to the node
 	//totalItems has total number of items in the dataset
@@ -59,8 +59,7 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 	memset(active,true,numItems*sizeof(bool));
 	float *Q=new float[numItems];
 	float *Q2=new float[numItems];
-	bool check;
-	likelihood(Q,active,user_sum,items,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems,check);
+	likelihood(Q,active,user_sum,items,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
     double alpha=1;
 	bool flag=true;
 	// cout<<"Going in"<<endl;
@@ -73,7 +72,7 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
                 }
 		}
 		//cerr<<"frst"<<endl;
-		likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems,check);
+		likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
 
 		#pragma omp parallel
 		{
