@@ -11,7 +11,7 @@ using namespace std;
 */
 float innerProduct(float *A,float* B,int size){
 	float val=0;
-//#pragma omp parallel for reduction(+:val)
+   // #pragma omp parallel for reduction(+:val)
 	for(int i=0;i<size;i++){
 		val=val+A[i]*B[i];
 
@@ -33,22 +33,10 @@ void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **us
 			for(int j=start;j<end;j++){
 				int uid=user_sparse_csr_c[j];
 				float x=innerProduct(items[allotted[i]],users[uid],CLUSTERS);
-				//if (x>0)
-                    //flag=true;
-                //else
-                  //  flag=false;
-                // if(x==0)
-                //     Q[i]=0;
-                // else
                 Q[i]=Q[i]-x-log(1-pow(M_E,-x));//Replace with efficient implementation of e^x
-
 			}
 		}
 	}
-	/*for(int i=0;i<10;i++)
-        std::cout<<Q[i]<<" ";
-    std::cout<<std::endl;
-    */
 }
 
 
@@ -67,62 +55,44 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 		newItems[i]=new float[CLUSTERS];
 		tempItems[i]=new float[CLUSTERS];
 	}
-	// for(int i=0;i<10;i++){
- //        std::cout<<i<<"\n";
- //        for(int j=0;j<CLUSTERS;j++)
- //            std::cout<<gradient[i][j]<<" ";
- //        std::cout<<"\n";
- //    }
 	bool *active=new bool[numItems];
 	memset(active,true,numItems*sizeof(bool));
 	float *Q=new float[numItems];
 	float *Q2=new float[numItems];
 	bool check;
 	likelihood(Q,active,user_sum,items,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems,check);
-	/*for(int i=0;i<numItems;i++)
-        for(int j=0;j<CLUSTERS;j++)
-            cout<<Q[i]<<"q";
-    cout<<endl;*/
-	double alpha=1;
+    double alpha=1;
 	bool flag=true;
 	// cout<<"Going in"<<endl;
 	while(flag){
-        //std::cerr<<flag<<" "<<alpha<<std::endl;
 		#pragma omp parallel for
 		for(int i=0;i<numItems;i++){
 			if(active[i])
 				for(int j=0;j<CLUSTERS;j++){
 					newItems[allotted[i]][j]=std::max((items[allotted[i]][j]-alpha*gradient[allotted[i]][j]),0.0);
-					//if(newItems[allotted[i]][j]<=0.0)
-                      //  newItems[allotted[i]][j]=.00000000000001;
                 }
 		}
 		//cerr<<"frst"<<endl;
 		likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems,check);
-		/*for(int i=0;i<10;i++)
-            cout<<Q2[i]<<" ";
-        cout<<endl;*/
-        //if(check){
-		//#pragma omp parallel
+
+		#pragma omp parallel
 		{
-			//#pragma omp for
+			#pragma omp for
 				for(int i=0;i<numItems;i++){
 					for(int j=0;j<CLUSTERS;j++)
 						tempItems[allotted[i]][j]=newItems[allotted[i]][j]-items[allotted[i]][j];
 
 				}
-			//#pragma omp for
+			#pragma omp for
 				for(int i=0;i<numItems;i++){
 					if (active[i]){
                     	if (Q2[allotted[i]]-Q[allotted[i]]<=SIGMA*innerProduct(gradient[allotted[i]],tempItems[allotted[i]],CLUSTERS)){
 							active[i]=false;
-							//std::cerr<<"removed"<<std::endl;
 							removed[omp_get_thread_num()]++;
 						}
 					}
 				}
         }
-
 		alpha=alpha*BETA;
 		int sum=0;
     for(int i=0;i<omp_get_max_threads();i++)
