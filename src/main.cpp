@@ -10,7 +10,6 @@ using namespace std;
 int main(int argc,char* argv[]){
     int numProcs,rank;
     MPI_Init(&argc,&argv);
-	cerr<<"Hello world"<<endl;
 	MPI_Comm_size(MPI_COMM_WORLD,&numProcs);//Set up different communicators when work broadcast has to be removed
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     int numUsers,numItems,numRatings;
