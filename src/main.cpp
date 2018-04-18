@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mpi.h>
 #include "ocular.h"
+#include "lineSearch.h"
 #define MASTER 0
 
 using namespace std;
@@ -19,17 +20,6 @@ int main(int argc,char* argv[]){
 	csr_users[0] = 0;
 	int prevUser= 0;
 	items[0]=0;
-	for (int i = 0; i<numRatings; i++){
-		cin >> items[i];
-		items[i]--;
-		int curr_user;
-		cin >> curr_user;
-		curr_user--;
-		while (prevUser<curr_user){
-            prevUser++;
-            csr_users[prevUser] = i;
-		}
-	}
 	for(int i=0;i<numRatings;i++){
 
 		int curr_item;
@@ -42,6 +32,20 @@ int main(int argc,char* argv[]){
 			csr_items[prevItem] = i;
 		}
 	}
+
+
+	for (int i = 0; i<numRatings; i++){
+		cin >> items[i];
+		items[i]--;
+		int curr_user;
+		cin >> curr_user;
+		curr_user--;
+		while (prevUser<curr_user){
+            prevUser++;
+            csr_users[prevUser] = i;
+		}
+	}
+
 	while (prevItem<=numItems){
 		prevItem++;
 		csr_items[prevItem]=numRatings;
@@ -79,7 +83,34 @@ int main(int argc,char* argv[]){
     count_user=(rank==numProcs-1)?(numUsers-(numProcs-1)*(numUsers/numProcs+1)):numUsers/numProcs+1;
     count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
     //Call ocular
+    fi = new float*[numItems];
+	fu = new float*[numUsers];
+	for(int i = 0; i < numItems; i++){
+		fi[i] = new float[CLUSTERS];
+	}
+	for(int i = 0; i < numUsers; i++){
+		fu[i] = new float[CLUSTERS];
+	}
     ocular(numItems,numUsers,csr_items,users,csr_users,items,fi,fu,alloted_users,alloted_items,count_user,count_item);
+    // std::cerr<<"Hello";
+    // for(int j=0;j<10;j++){
+    // for(int i=0;i<CLUSTERS;i++)
+    //     std::cout<<fi[j][i]<<" ";
+
+    // // std::cout<<"\n";
+    // }
+    for(int i = 0; i < numItems; i++){
+    	for(int j = 0; j < CLUSTERS; j++){
+    		std::cerr << fi[i][j] << " ";
+    	}
+    	std::cerr<<std::endl;
+    }
+    for(int i = 0; i < numUsers; i++){
+    	for(int j = 0; j < CLUSTERS; j++){
+    		std::cerr << fu[i][j] << " ";
+    	}
+    	std::cerr<<std::endl;
+    }
 	MPI_Finalize();
 	return 0;
 }

@@ -3,6 +3,7 @@
 
 # Executables
 *.out
+bin/*
 
 # VS Code
 .vscode/
