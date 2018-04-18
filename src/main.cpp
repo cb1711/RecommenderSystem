@@ -104,8 +104,8 @@ int main(int argc,char* argv[]){
     count_user=(rank==numProcs-1)?(numUsers-(numProcs-1)*(numUsers/numProcs+1)):numUsers/numProcs+1;
     count_item=(rank==numProcs-1)?(numItems-(numProcs-1)*(numItems/numProcs+1)):numItems/numProcs+1;
     //Call ocular
-    fi = new float*[((numItems/numProcs)+1)];
-	fu = new float*[((numUsers/numProcs)+1)];
+    fi = new float*[((numItems/numProcs)+1)*numProcs];
+	fu = new float*[((numUsers/numProcs)+1)*numProcs];
 	for(int i = 0; i < ((numItems/numProcs)+1)*numProcs; i++){
 		fi[i] = new float[CLUSTERS];
 	}
