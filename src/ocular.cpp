@@ -29,8 +29,8 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 		}
 	}
 	// TODO: Change communicator
-	MPI_Allgather(curfi,count_item*CLUSTERS,MPI_FLOAT,fi,numItem*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);//Check Again
-	MPI_Allgather(curfu,count_user*CLUSTERS,MPI_FLOAT,fu,numUser*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);//Check Again
+	MPI_Allgather(curfi,count_item*CLUSTERS,MPI_FLOAT,fi,numItem*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
+	MPI_Allgather(curfu,count_user*CLUSTERS,MPI_FLOAT,fu,numUser*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
 
 	float** gi = new float*[numItem];
 	for(int item = 0; item < numItem; item++){
@@ -63,10 +63,11 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 
 		linesearch(fi,sum_user,fu,gi,count_item,alloted_item,numItem,csr_item,users);
 		for(int item_idx = 0; item_idx < count_item; item_idx++){
-			curfi[item_idx] = fi[alloted_item[item_idx]];//Check Again
+			for(int i = 0; i < CLUSTERS; i++)
+				curfi[item_idx][i] = fi[alloted_item[item_idx]][i];
 		}
 
-		MPI_Allgather(curfi,count_item,MPI_FLOAT,fi,numItem,MPI_FLOAT,MPI_COMM_WORLD);//Check Again
+		MPI_Allgather(curfi,count_item*CLUSTERS,MPI_FLOAT,fi,numItem*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
 
 		for(int i = 0; i < CLUSTERS; i++){
 			sum_item[i] = 0;
@@ -82,9 +83,10 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 		linesearch(fu,sum_item,fi,gu,count_user,alloted_user,numUser,csr_user,items);
 
 		for(int user_idx = 0; user_idx < count_user; user_idx++){
-			curfu[user_idx] = fu[alloted_user[user_idx]];//Check Again
+			for(int i = 0; i < CLUSTERS; i++)
+			curfu[user_idx][i] = fu[alloted_user[user_idx]][i];
 		}
-		MPI_Allgather(curfu,count_user,MPI_FLOAT,fu,numUser,MPI_FLOAT,MPI_COMM_WORLD);//Check Again
+		MPI_Allgather(curfu,count_user*CLUSTERS,MPI_FLOAT,fu,numUser*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
 		for(int i = 0; i < CLUSTERS; i++){
 			sum_user[i] = 0;
 		}
