@@ -11,26 +11,21 @@
 #include <iostream>
 #define	num_it	100
 
-void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* items,float** fi,float** fu,int* alloted_user,int* alloted_item,int count_user,int count_item){
+void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* items,float** fi,float** fu,int* alloted_item,int* alloted_user,int count_item,int count_user,int* proc_item,int* proc_user,int* displ_item,int* displ_user){
 	srand(time(NULL));
-	std::cerr<<"In ocular"<<std::endl;
-	float** curfi=new float*[count_item];
 	for(int i = 0; i < count_item; i++){
-		curfi[i] = new float[CLUSTERS];
 		for(int j = 0; j < CLUSTERS; j++){
-			curfi[i][j]=rand()*1.0/rand()+.01;
+			fi[alloted_item[i]][j]=(rand()+1)*1.0/rand();
 		}
 	}
-	float** curfu=new float*[count_user];
 	for(int i = 0; i < count_user; i++){
-		curfu[i] = new float[CLUSTERS];
 		for(int j = 0; j < CLUSTERS; j++){
-			curfu[i][j]=rand()*1.0/rand()+.01;
+			fu[alloted_user[i]][j]=(rand()+1)*1.0/rand();
 		}
 	}
-	// TODO: Change communicator
-	MPI_Allgather(curfi,count_item*CLUSTERS,MPI_FLOAT,fi,numItem*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
-	MPI_Allgather(curfu,count_user*CLUSTERS,MPI_FLOAT,fu,numUser*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
+
+	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fi[0][0]),proc_item,displ_item,MPI_FLOAT,MPI_COMM_WORLD);
+	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fu[0][0]),proc_user,displ_user,MPI_FLOAT,MPI_COMM_WORLD);
 
 	float** gi = new float*[numItem];
 	for(int item = 0; item < numItem; item++){
@@ -57,17 +52,13 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 			sum_user[j] += fu[i][j];
 		}
 	}
-    std::cerr<<"Before loop"<<std::endl;
 	for(int iter = 0; iter < num_it; iter++){
+		std::cerr << "Iteration: " << iter << std::endl;
 		gradient(fi,fu,alloted_item,numItem,csr_item,users,sum_user,gi);
 
 		linesearch(fi,sum_user,fu,gi,count_item,alloted_item,numItem,csr_item,users);
-		for(int item_idx = 0; item_idx < count_item; item_idx++){
-			for(int i = 0; i < CLUSTERS; i++)
-				curfi[item_idx][i] = fi[alloted_item[item_idx]][i];
-		}
 
-		MPI_Allgather(curfi,count_item*CLUSTERS,MPI_FLOAT,fi,numItem*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
+		MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fi[0][0]),proc_item,displ_item,MPI_FLOAT,MPI_COMM_WORLD);
 
 		for(int i = 0; i < CLUSTERS; i++){
 			sum_item[i] = 0;
@@ -78,15 +69,11 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 			}
 		}
 
-
 		gradient(fu,fi,alloted_user,numUser,csr_user,items,sum_item,gu);
 		linesearch(fu,sum_item,fi,gu,count_user,alloted_user,numUser,csr_user,items);
 
-		for(int user_idx = 0; user_idx < count_user; user_idx++){
-			for(int i = 0; i < CLUSTERS; i++)
-			curfu[user_idx][i] = fu[alloted_user[user_idx]][i];
-		}
-		MPI_Allgather(curfu,count_user*CLUSTERS,MPI_FLOAT,fu,numUser*CLUSTERS,MPI_FLOAT,MPI_COMM_WORLD);
+		MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fu[0][0]),proc_user,displ_user,MPI_FLOAT,MPI_COMM_WORLD);
+
 		for(int i = 0; i < CLUSTERS; i++){
 			sum_user[i] = 0;
 		}
@@ -102,12 +89,8 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 	for(int i = 0; i < numUser; i++){
 		delete[] gu[i];
 	}
-	delete[] curfi;
-	delete[] curfu;
 	delete[] gi;
 	delete[] gu;
 	delete[] sum_item;
 	delete[] sum_user;
-	std::cerr<<"Out of ocular"<<std::endl;
-
 }
