@@ -11,21 +11,31 @@
 #include <iostream>
 #define	num_it	100
 
-void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* items,float** fi,float** fu,int* alloted_item,int* alloted_user,int count_item,int count_user,int* proc_item,int* proc_user,int* displ_item,int* displ_user){
+void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* items,float** fi,float** fu,int* alloted_item,int* alloted_user,int count_item,int count_user,int* proc_item,int* proc_user,int* displ_item,int* displ_user,int rank,int grp_size){
 	srand(time(NULL));
+	
 	for(int i = 0; i < count_item; i++){
 		for(int j = 0; j < CLUSTERS; j++){
 			fi[alloted_item[i]][j]=(rand()+1)*1.0/rand();
 		}
 	}
+
 	for(int i = 0; i < count_user; i++){
 		for(int j = 0; j < CLUSTERS; j++){
 			fu[alloted_user[i]][j]=(rand()+1)*1.0/rand();
 		}
 	}
 
+	for(int i = 0; i < grp_size; i++){
+		proc_item[i] *= CLUSTERS;
+		proc_user[i] *= CLUSTERS;
+		displ_item[i] *= CLUSTERS;
+		displ_user[i] *= CLUSTERS;
+	}
+
 	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fi[0][0]),proc_item,displ_item,MPI_FLOAT,MPI_COMM_WORLD);
 	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fu[0][0]),proc_user,displ_user,MPI_FLOAT,MPI_COMM_WORLD);
+
 
 	float** gi = new float*[numItem];
 	for(int item = 0; item < numItem; item++){
@@ -53,11 +63,9 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 		}
 	}
 	for(int iter = 0; iter < num_it; iter++){
-		std::cerr << "Iteration: " << iter << std::endl;
-		gradient(fi,fu,alloted_item,numItem,csr_item,users,sum_user,gi);
 
+		gradient(fi,fu,alloted_item,count_item,csr_item,users,sum_user,gi);
 		linesearch(fi,sum_user,fu,gi,count_item,alloted_item,numItem,csr_item,users);
-
 		MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fi[0][0]),proc_item,displ_item,MPI_FLOAT,MPI_COMM_WORLD);
 
 		for(int i = 0; i < CLUSTERS; i++){
@@ -69,9 +77,8 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 			}
 		}
 
-		gradient(fu,fi,alloted_user,numUser,csr_user,items,sum_item,gu);
+		gradient(fu,fi,alloted_user,count_user,csr_user,items,sum_item,gu);
 		linesearch(fu,sum_item,fi,gu,count_user,alloted_user,numUser,csr_user,items);
-
 		MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,&(fu[0][0]),proc_user,displ_user,MPI_FLOAT,MPI_COMM_WORLD);
 
 		for(int i = 0; i < CLUSTERS; i++){

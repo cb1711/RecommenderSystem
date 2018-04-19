@@ -27,10 +27,6 @@ void gradient(float** items,float** users,int* allotted,int numItems,int* csr_it
 				int user = csr_users[user_idx];
 				float x = innerProduct(items[item],users[user],CLUSTERS);
 				float factor = 1.0/(1-pow(M_E,-x));
-				//else
-				// if(x==0)
-    //                 factor=0;
-
 				for(int j=0; j<CLUSTERS; j++){
 					g[item][j] -= users[user][j]*factor;
 				}
