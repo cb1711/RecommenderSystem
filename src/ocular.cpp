@@ -16,13 +16,13 @@ void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* 
 	
 	for(int i = 0; i < count_item; i++){
 		for(int j = 0; j < CLUSTERS; j++){
-			fi[alloted_item[i]][j]=(rand()+1)*1.0/rand();
+			fi[alloted_item[i]][j]=(rand()*100000.0/RAND_MAX);
 		}
 	}
 
 	for(int i = 0; i < count_user; i++){
 		for(int j = 0; j < CLUSTERS; j++){
-			fu[alloted_user[i]][j]=(rand()+1)*1.0/rand();
+			fu[alloted_user[i]][j]=(rand()*100000.0/RAND_MAX);
 		}
 	}
 
