@@ -16,8 +16,8 @@ using namespace std;
 
 void solve(){
 	srand(time(NULL));
-	int users,items,ratings;
-	cin>>users>>items>>ratings;
+	int users,items,ratings,queries;
+	cin>>users>>items>>ratings>>queries;
 	cout<<users<<" "<<items<<" "<<ratings<<endl;
 	vector<pii>x;
 	rep(i,1,users+1){
@@ -38,6 +38,11 @@ void solve(){
 	rep(i,0,ratings){
 		cout<<x[i].F<<" "<<x[i].S<<endl;
 	}
+	random_shuffle(all(x));
+	rep(i,0,queries){
+		cout<<x[i].F<<" "<<x[i].S<<endl;
+	}
+	cout<<-1<<" "<<-1<<endl;
 }
 
 int main(){
