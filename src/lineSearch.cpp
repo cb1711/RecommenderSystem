@@ -42,7 +42,6 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 	//numItems is number of items allotted to the node
 	//totalItems is number of items in all
 	//allotted contains items allotted to the node
-
 	float **newItems,**tempItems;
 	tempItems=new float*[totalItems];
 	newItems=new float*[totalItems];
@@ -62,49 +61,50 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 	while(flag){
 		#pragma omp parallel for
 		for(int i=0;i<numItems;i++){
-			if(active[i])
+			if(active[i]){
 				for(int j=0;j<CLUSTERS;j++){
 					newItems[allotted[i]][j]=std::max((items[allotted[i]][j]-alpha*gradient[allotted[i]][j]),0.0);
-				}
+				}				
 			}
-			likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
+		}
+		likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems);
 
 		#pragma omp parallel
-			{
+		{
 			#pragma omp for
-				for(int i=0;i<numItems;i++){
-					for(int j=0;j<CLUSTERS;j++)
-						tempItems[allotted[i]][j]=newItems[allotted[i]][j]-items[allotted[i]][j];
+			for(int i=0;i<numItems;i++){
+				for(int j=0;j<CLUSTERS;j++)
+					tempItems[allotted[i]][j]=newItems[allotted[i]][j]-items[allotted[i]][j];
 
-				}
+			}
 			#pragma omp for
-				for(int i=0;i<numItems;i++){
-					if (active[i]){
-						if (Q2[allotted[i]]-Q[allotted[i]]<=SIGMA*innerProduct(gradient[allotted[i]],tempItems[allotted[i]],CLUSTERS)){
-							active[i]=false;
-							removed[omp_get_thread_num()]++;
-						}
+			for(int i=0;i<numItems;i++){
+				if (active[i]){
+					if (Q2[allotted[i]]-Q[allotted[i]]<=SIGMA*innerProduct(gradient[allotted[i]],tempItems[allotted[i]],CLUSTERS)){
+						active[i]=false;
+						removed[omp_get_thread_num()]++;
 					}
 				}
 			}
-			alpha=alpha*BETA;
-			int sum=0;
-			for(int i=0;i<omp_get_max_threads();i++)
-				sum+=removed[i];
-			if(sum==numItems)
-				flag=false;
 		}
-		delete[] active;
-		delete[] Q;
-		delete[] Q2;
-		for(int i=0;i<numItems;i++){
-			for(int j=0;j<CLUSTERS;j++)
-				items[allotted[i]][j]=newItems[allotted[i]][j];
-		}
-		for(int i=0;i<totalItems;i++){
-			delete[] newItems[i];
-			delete[] tempItems[i];
-		}
-		delete[] newItems;
-		delete[] tempItems;
+		alpha=alpha*BETA;
+		int sum=0;
+		for(int i=0;i<omp_get_max_threads();i++)
+			sum+=removed[i];
+		if(sum==numItems)
+			flag=false;
 	}
+	delete[] active;
+	delete[] Q;
+	delete[] Q2;
+	for(int i=0;i<numItems;i++){
+		for(int j=0;j<CLUSTERS;j++)
+			items[allotted[i]][j]=newItems[allotted[i]][j];
+	}
+	for(int i=0;i<totalItems;i++){
+		delete[] newItems[i];
+		delete[] tempItems[i];
+	}
+	delete[] newItems;
+	delete[] tempItems;
+}

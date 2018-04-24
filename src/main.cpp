@@ -57,7 +57,7 @@ int main(int argc,char* argv[]){
 
 		for(int i = 0; i < numRatings; i++){
 			int user, item;
-			cin >> user >> item;
+			cin >> item >> user;
 			item--;
 			items[i] = item;
 			csr_users[user]++;
@@ -126,11 +126,27 @@ int main(int argc,char* argv[]){
 	ocular(numItems,numUsers,csr_items,users,csr_users,items,fi,fu,alloted_items,alloted_users,process_items,process_users,sendcounts_item,sendcounts_user,displs_item,displs_user,rank,numProcs);
 	MPI_Finalize();
 
+	cout << "Printing fi\n";
+	for(int i = 0; i < numItems; i++){
+		for(int j = 0; j < CLUSTERS; j++){
+			cout << fi[i][j] <<" ";
+		}
+		cout<<endl;
+	}
+
+	cout << "Printing fu\n";
+	for(int i = 0; i < numUsers; i++){
+		for(int j = 0; j < CLUSTERS; j++){
+			cout << fu[i][j] <<" ";
+		}
+		cout<<endl;
+	}
+
+	
 	int user_id,item_id;
 	cout<<"Enter the user and item"<<endl;
-	while(1){
-		cin>>user_id>>item_id;
-		if(user_id<1 or user_id>numUsers or item_id<0 or item_id>numItems)break;
+	while(cin>>user_id>>item_id){
+		if(user_id<1 or user_id>numUsers or item_id<1 or item_id>numItems)break;
 		user_id--;
 		item_id--;
 		float x=innerProduct(fi[item_id],fu[user_id],CLUSTERS);
