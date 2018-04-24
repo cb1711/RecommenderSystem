@@ -11,7 +11,7 @@
 float innerProduct(float* A,float *B,int size);
 
 /*Returns value of likelihood*/
-void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems);
+void likelihood(float *Q,bool *selected,float *user_sum,float **items,float **users,int numItems,int* item_sparse_csr_r,int *user_sparse_csr_c,int *allotted,int totalItems,bool flag);
 
 
 /*Function for linesearch */
