@@ -9,20 +9,23 @@
 #include <ctime>
 #include <cstdlib>
 #include <iostream>
-#define	num_it	100
+#include <random>
+
+#define	num_it	500
 
 void ocular(int numItem,int numUser,int* csr_item,int* users,int* csr_user,int* items,float** fi,float** fu,int* alloted_item,int* alloted_user,int count_item,int count_user,int* proc_item,int* proc_user,int* displ_item,int* displ_user,int rank,int grp_size){
-	srand(time(NULL));
-	
+	std::random_device rand_dev;
+	std::default_random_engine generator(rand_dev());
+	std::uniform_real_distribution<float> distribution(0.1,100000.0);
 	for(int i = 0; i < count_item; i++){
 		for(int j = 0; j < CLUSTERS; j++){
-			fi[alloted_item[i]][j]=(rand()*100000.0/RAND_MAX);
+			fi[alloted_item[i]][j]=distribution(generator);
 		}
 	}
 
 	for(int i = 0; i < count_user; i++){
 		for(int j = 0; j < CLUSTERS; j++){
-			fu[alloted_user[i]][j]=(rand()*100000.0/RAND_MAX);
+			fu[alloted_user[i]][j]=distribution(generator);
 		}
 	}
 

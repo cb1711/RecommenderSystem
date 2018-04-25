@@ -3,6 +3,7 @@
 #include "ocular.h"
 #include "lineSearch.h"
 #include <math.h>
+#include <iomanip>
 #define MASTER 0
 
 using namespace std;
@@ -150,7 +151,7 @@ int main(int argc,char* argv[]){
 		user_id--;
 		item_id--;
 		float x=innerProduct(fi[item_id],fu[user_id],CLUSTERS);
-		cout<<100*(1-pow(M_E,-x))<<endl;
+		cout<<fixed<<setprecision(2)<<100*(1-pow(M_E,-x))<<endl;
 	}
 	return 0;
 }
