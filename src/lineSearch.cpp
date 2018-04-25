@@ -67,7 +67,7 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
 	bool flag=true;
 
 	while(flag){
-        	//#pragma omp parallel for
+        	#pragma omp parallel for
           		for(int i=0;i<numItems;i++){
                 		if(active[i])
                     			for(int j=0;j<CLUSTERS;j++){
@@ -76,15 +76,15 @@ void linesearch(float **items, float *user_sum, float**users, float **gradient, 
                     			}
             		}
         	likelihood(Q2,active,user_sum,newItems,users,numItems,item_sparse_csr_r,user_sparse_csr_c,allotted,totalItems,false);
-        	//#pragma omp parallel
+        	#pragma omp parallel
        		{
-                //#pragma omp for
+                #pragma omp for
 				for(int i=0;i<numItems;i++){
                     if(active[i])
                         for(int j=0;j<CLUSTERS;j++)
                             tempItems[i][j]=newItems[i][j]-items[allotted[i]][j];
 				}
-            		//#pragma omp for
+            		#pragma omp for
 				for(int i=0;i<numItems;i++){
 					if (active[i]){
 						if (Q2[i]-Q[i]<=SIGMA*innerProduct(gradient[allotted[i]],tempItems[i],CLUSTERS)){
