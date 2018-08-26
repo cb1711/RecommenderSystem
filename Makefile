@@ -20,16 +20,20 @@ main.o: src/main.cpp
 	@echo Compiling main.cpp
 	mpiCC -c src/main.cpp -o main.o
 
-program: gradient.o lineSearch.o ocular.o main.o
-	@mkdir -p bin
-	@echo Finishing compilation 
-	mpiCC -fopenmp ocular.o lineSearch.o gradient.o main.o -o bin/ocular
-	@echo Cleaning up
-	rm -f *.o
+data.o: src/gen.cpp
+	@echo Compiling data generator
+	g++ -c src/gen.cpp -o data.o
 
-clean:
+program: gradient.o lineSearch.o ocular.o main.o data.o
+	@mkdir -p bin
+	@echo Finishing compilation
+	g++ data.o -o bin/data
+	mpiCC -fopenmp ocular.o lineSearch.o gradient.o main.o -o bin/ocular
 	@echo Removing object files
 	@rm -f *.o
-	@echo Removing executable
+
+clean:
+	@echo Cleaning up
+	@rm -f *.o
 	@rm -rf bin
 
