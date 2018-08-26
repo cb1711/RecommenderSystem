@@ -21,12 +21,15 @@ main.o: src/main.cpp
 	mpiCC -c src/main.cpp -o main.o
 
 program: gradient.o lineSearch.o ocular.o main.o
+	@mkdir -p bin
 	@echo Finishing compilation 
-	mpiCC -fopenmp ocular.o lineSearch.o gradient.o main.o -o ocular
-
+	mpiCC -fopenmp ocular.o lineSearch.o gradient.o main.o -o bin/ocular
+	@echo Cleaning up
+	rm -f *.o
 
 clean:
-	@echo Removing files
+	@echo Removing object files
 	@rm -f *.o
-	@rm -f ocular
+	@echo Removing executable
+	@rm -rf bin
 
