@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
     int *items = new int[numRatings];
     int *csr_items = new int[numItems + 1];
     int *users = new int[numRatings];
-#pragma omp parallel {
+#pragma omp parallel 
+{
 #pragma omp for
     for (int i = 0; i < numUsers + 1; i++) {
         csr_users[i] = 0;
