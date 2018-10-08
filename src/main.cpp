@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     ifstream inFile;
     int tempTransfer[] = {0, 0, 0};
     if (rank == MASTER) {
-        inFile.open("data/data");
+        inFile.open("data/d2");
         if(!inFile) {
             cerr<<"Couldn't open file" << endl;
             exit(0);
@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
     int *items = new int[numRatings];
     int *csr_items = new int[numItems + 1];
     int *users = new int[numRatings];
-#pragma omp parallel {
+#pragma omp parallel 
+{
 #pragma omp for
     for (int i = 0; i < numUsers + 1; i++) {
         csr_users[i] = 0;
@@ -118,12 +119,13 @@ int main(int argc, char *argv[])
     MPI_Scatterv(all_users, sendcounts_user, displs_user, MPI_INT, alloted_users, process_users, MPI_INT, MASTER, MPI_COMM_WORLD);
 
     //Call ocular
-    float **fi, **fu;
-    float *item_data = new float[numItems * CLUSTERS];
-    float *user_data = new float[numUsers * CLUSTERS];
+    uint16_t **fi, **fu;
+    uint16_t *item_data = new uint16_t[numItems * CLUSTERS];
+    uint16_t *user_data = new uint16_t[numUsers * CLUSTERS];
 
-    fi = new float *[numItems];
-    fu = new float *[numUsers];
+    fi = new uint16_t *[numItems];
+    fu = new uint16_t *[numUsers];
+
     for (int i = 0; i < numItems; i++) {
         fi[i] = &(item_data[i * CLUSTERS]);
     }
@@ -132,7 +134,7 @@ int main(int argc, char *argv[])
     }
     ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, alloted_items, alloted_users, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
     if (rank == MASTER) {
-        cout << "Printing fi\n";
+        /*cout << "Printing fi\n";
         for (int i = 0; i < numItems; i++) {
             for (int j = 0; j < CLUSTERS; j++) {
                 cout << fi[i][j] << " ";
@@ -147,8 +149,8 @@ int main(int argc, char *argv[])
             }
             cout << endl;
         }
-
-        int user_id, item_id;
+        */
+        /*int user_id, item_id;
         cout << "Enter the user and item" << endl;
         while (cin >> item_id >> user_id) {
             if (user_id < 1 or user_id > numUsers or item_id < 1 or item_id > numItems)
@@ -157,7 +159,7 @@ int main(int argc, char *argv[])
             item_id--;
             float x = innerProduct(fi[item_id], fu[user_id], CLUSTERS);
             cout << fixed << setprecision(2) << 100 * (1 - pow(M_E, -x)) << endl;
-        }
+        }*/
     }
     MPI_Finalize();
     return 0;
