@@ -13,7 +13,6 @@ using namespace std;
 */
 float innerProduct(float *A, float *B, int size) {
     float val = 0;
-    // #pragma omp parallel for reduction(+:val)
     for (int i = 0; i < size; i++) {
         val = val + A[i] * B[i];
     }
@@ -73,7 +72,7 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
     bool flag = true;
 
     while (flag) {
-    #pragma omp parallel for
+        #pragma omp parallel for
         for (int i = 0; i < numItems; i++) {
             if (active[i])
                 for (int j = 0; j < CLUSTERS; j++) {

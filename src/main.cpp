@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
         fu[i] = &(user_data[i * CLUSTERS]);
     }
     ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, alloted_items, alloted_users, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
-    if (rank == MASTER) {
+    // if (rank == MASTER) {
         /*cout << "Printing fi\n";
         for (int i = 0; i < numItems; i++) {
             for (int j = 0; j < CLUSTERS; j++) {
@@ -160,7 +160,9 @@ int main(int argc, char *argv[])
             float x = innerProduct(fi[item_id], fu[user_id], CLUSTERS);
             cout << fixed << setprecision(2) << 100 * (1 - pow(M_E, -x)) << endl;
         }*/
-    }
+    //}
+    MPI_Barrier(MPI_COMM_WORLD);
+    cout << "Done" <<endl;
     MPI_Finalize();
     return 0;
 }
