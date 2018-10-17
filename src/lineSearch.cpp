@@ -42,7 +42,7 @@ void likelihood(float *Q, bool *selected, float *user_sum, float **items, float 
                 else
                     x = innerProduct(items[i], users[uid], CLUSTERS);
                 float y = Q[i];
-                Q[i] = Q[i] - x - log(1 - pow(M_E, -x)); //Replace with efficient implementation of e^x
+                Q[i] = Q[i] - x - log(1 - exp(-x)); //Replace with efficient implementation of e^x
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- *	Training of OCuLaR model
+ * Training of OCuLaR model
  */
 
 #include "ocular.h"
@@ -44,10 +44,11 @@ void ocular(int numItem, int numUser, int *csr_item, int *users, int *csr_user, 
 	MPI_Iallgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, &(short_users[0][0]), proc_user, displ_user, MPI_UNSIGNED_SHORT, MPI_COMM_WORLD, &user_req);
 
 	float **gi = new float *[numItem];
-	for (int item = 0; item < numItem; item++) {
+    float **gu = new float *[numUser];
+    for (int item = 0; item < numItem; item++) {
 		gi[item] = new float[CLUSTERS];
 	}
-	float **gu = new float *[numUser];
+	
 	for (int user = 0; user < numUser; user++)
 		gu[user] = new float[CLUSTERS];
 	
@@ -74,7 +75,6 @@ void ocular(int numItem, int numUser, int *csr_item, int *users, int *csr_user, 
     
     half2floatv(fi[0], short_items[0], numItem*CLUSTERS);
 	for (int iter = 0; iter < num_it; iter++) {
-        std::cout<<iter<<std::endl;
         double start = clock();
 		gradient(fi, fu, alloted_item, count_item, count_user, numUser, csr_item, users, sum_user, gi, user_req, short_users);
 		linesearch(fi, sum_user, fu, gi, count_item, alloted_item, numItem, csr_item, users);
@@ -83,9 +83,8 @@ void ocular(int numItem, int numUser, int *csr_item, int *users, int *csr_user, 
 
 		MPI_Iallgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, &(short_items[0][0]), proc_item, displ_item, MPI_UNSIGNED_SHORT, MPI_COMM_WORLD, &item_req);
 
-		for (int i = 0; i < CLUSTERS; i++) {
+		for (int i = 0; i < CLUSTERS; i++)
 			sum_item[i] = 0;
-		}
 	    
 		gradient(fu, fi, alloted_user, count_user, count_item, numItem, csr_user, items, sum_item, gu, item_req, short_items);
 		linesearch(fu, sum_item, fi, gu, count_user, alloted_user, numUser, csr_user, items);
@@ -96,16 +95,17 @@ void ocular(int numItem, int numUser, int *csr_item, int *users, int *csr_user, 
 			sum_user[i] = 0;
 	    
         double end = clock();
-        std::cout << double(end-start)/CLOCKS_PER_SEC << std::endl;
-	}
-
-	for (int i = 0; i < numItem; i++)
+        }
+    MPI_Wait(&user_req, MPI_STATUS_IGNORE);
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (int i = 0; i < numItem; i++)
 		delete[] gi[i];
 	for (int i = 0; i < numUser; i++)
-		delete[] gu[i];
-    MPI_Wait(&user_req, MPI_STATUS_IGNORE);
-	delete[] gi;
-	delete[] gu;
+    delete[] gu[i];
+    delete[] item_data;
+    delete[] user_data;
+    delete[] gi;
+    delete[] gu;
 	delete[] sum_item;
-	delete[] sum_user;
+    delete[] sum_user;
 }

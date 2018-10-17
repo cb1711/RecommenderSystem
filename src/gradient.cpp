@@ -38,7 +38,7 @@ void gradient(float **items, float **users, int *allotted, int numItems, int num
         for (int user_idx = csr_items[item]; user_idx < csr_items[item + 1]; user_idx++) {
             int user = csr_users[user_idx];
             float x = innerProduct(items[item], users[user], CLUSTERS);
-            float factor = 1.0 / (1 - pow(M_E, -x));
+            float factor = 1.0 / (1 -  exp(-x));
             for (int j = 0; j < CLUSTERS; j++)				
                 g[item][j] -= users[user][j] * factor;
         }

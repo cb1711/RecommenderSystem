@@ -19,8 +19,11 @@ void f2hvUtil(float* floats, uint16_t* halfs) {
 }
 
 void float2halfv(float* floats, uint16_t* halfs, int x) {
-    for(int i = 0; i < x; i+= 4)
+    int xs = (x/4)*4;
+    for(int i = 0; i < xs; i+= 4)
         f2hvUtil(floats+i, halfs+i);
+    for(int i = xs; i < x; i++)
+        halfs[i] = float2half(floats[i]);
 }
 
 //#pragma intel optimization_parameter target_arch=CORE-AVX-I
@@ -31,6 +34,9 @@ void h2fvUtil(float *floats, uint16_t* halfs){
 }
 
 void half2floatv(float* floats, uint16_t* halfs, int x) {
-    for (int i = 0; i < x; i+=4)
+    int xs = (x/4)*4;
+    for (int i = 0; i < xs; i+=4)
         h2fvUtil(floats+i,halfs+i);
+    for (int i = xs; i < x; i++)
+        floats[i] = half2float(halfs[i]);
 }
