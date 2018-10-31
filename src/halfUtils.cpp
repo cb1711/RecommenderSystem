@@ -1,7 +1,7 @@
 #include "halfUtils.h"
 #include <immintrin.h>
 #include <iostream>
-
+#include <cmath>
 
 float half2float(uint16_t half) {
     return _cvtsh_ss(half);
@@ -11,7 +11,7 @@ uint16_t float2half(float f) {
     return _cvtss_sh(f,0);
 }
 
-//#pragma intel optimization_parameter target_arch=CORE-AVX-I
+#pragma intel optimization_parameter target_arch=CORE-AVX-I
 void f2hvUtil(float* floats, uint16_t* halfs) {
     __m128 float_vector = _mm_load_ps(floats);
     __m128i half_vector = _mm_cvtps_ph(float_vector, 0);
@@ -24,9 +24,15 @@ void float2halfv(float* floats, uint16_t* halfs, int x) {
         f2hvUtil(floats+i, halfs+i);
     for(int i = xs; i < x; i++)
         halfs[i] = float2half(floats[i]);
+    // As half2float(i > 31743) == inf
+    /*for(int i=0; i < x; i++)
+        if(std::isinf(half2float(halfs[i]))){
+            std::cout<<"Conversion"<<std::endl;
+            halfs[i] = 31743;                
+            }*/
 }
 
-//#pragma intel optimization_parameter target_arch=CORE-AVX-I
+#pragma intel optimization_parameter target_arch=CORE-AVX-I
 void h2fvUtil(float *floats, uint16_t* halfs){
     __m128i half_vector = _mm_load_si128((__m128i *) halfs);
     __m128 float_vector = _mm_cvtph_ps(half_vector);

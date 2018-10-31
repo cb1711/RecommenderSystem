@@ -19,6 +19,8 @@ void gradient(float **items, float **users, int *allotted, int numItems, int num
         int item = allotted[i];
         for (int j = 0; j < CLUSTERS; j++) {
             g[item][j] =2 * LAMBDA * items[item][j];
+            if(isnan(g[item][j]))
+                cout<<"items"<<endl;
         }
     }
     double start = clock();
@@ -33,14 +35,23 @@ void gradient(float **items, float **users, int *allotted, int numItems, int num
     #pragma omp parallel for
     for (int i = 0; i < numItems; i++) {
         int item = allotted[i];
-        for (int j = 0; j < CLUSTERS; j++)
+        for (int j = 0; j < CLUSTERS; j++){
             g[item][j] += user_sum[j];
+            if(isnan(g[item][j]))
+                cout<<"user_sum"<<endl;
+        }
         for (int user_idx = csr_items[item]; user_idx < csr_items[item + 1]; user_idx++) {
             int user = csr_users[user_idx];
             float x = innerProduct(items[item], users[user], CLUSTERS);
             float factor = 1.0 / (1 -  exp(-x));
-            for (int j = 0; j < CLUSTERS; j++)				
+            if(isinf(factor))
+               cout<<"factor"<<endl;
+            for (int j = 0; j < CLUSTERS; j++) {
                 g[item][j] -= users[user][j] * factor;
+                //if(isnan(g[item][j]))
+                //  cout<<factor<<endl;
+                //cout<<"users*factor"<<endl;
+            }
         }
     }
 }

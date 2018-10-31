@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iomanip>
 #include <fstream>
+#include "halfUtils.h"
 #define MASTER 0
 
 using namespace std;
@@ -133,34 +134,38 @@ int main(int argc, char *argv[])
         fu[i] = &(user_data[i * CLUSTERS]);
     }
     ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, alloted_items, alloted_users, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
-    // if (rank == MASTER) {
-        /*cout << "Printing fi\n";
-        for (int i = 0; i < numItems; i++) {
-            for (int j = 0; j < CLUSTERS; j++) {
-                cout << fi[i][j] << " ";
-            }
-            cout << endl;
-        }
+    if (rank == MASTER) {
+        float **fi_float, **fu_float;
+        float *item_data_f = new float[numItems * CLUSTERS];
+        float *user_data_f = new float[numUsers * CLUSTERS];
 
-        cout << "Printing fu\n";
-        for (int i = 0; i < numUsers; i++) {
-            for (int j = 0; j < CLUSTERS; j++) {
-                cout << fu[i][j] << " ";
-            }
-            cout << endl;
+        fi_float = new float *[numItems];
+        fu_float = new float *[numUsers];
+        
+        for (int i = 0; i < numItems; i++) {
+            fi_float[i] = &(item_data_f[i * CLUSTERS]);
         }
-        */
-        /*int user_id, item_id;
+        for (int i = 0; i < numUsers; i++) {
+            fu_float[i] = &(user_data_f[i * CLUSTERS]);
+        }
+        half2floatv(fu_float[0],fu[0],numUsers*CLUSTERS);
+        half2floatv(fi_float[0],fi[0],numItems*CLUSTERS);
+        int user_id, item_id, query_num;
+        /*cout << "Enter the number of queries" << endl;
+        cin >> query_num;
         cout << "Enter the user and item" << endl;
-        while (cin >> item_id >> user_id) {
-            if (user_id < 1 or user_id > numUsers or item_id < 1 or item_id > numItems)
-                break;
+        for(int i=0; i < query_num; i++) {
+            cin >> item_id >> user_id;
+            if (user_id > numUsers or item_id > numItems) {
+                cout << "Query not in range" << endl;
+                continue;
+            }
             user_id--;
             item_id--;
-            float x = innerProduct(fi[item_id], fu[user_id], CLUSTERS);
-            cout << fixed << setprecision(2) << 100 * (1 - pow(M_E, -x)) << endl;
-        }*/
-    //}
+            float x = innerProduct(fi_float[item_id], fu_float[user_id], CLUSTERS);
+            cout << fixed << setprecision(2) << 100 * (1 - exp(-x)) << endl;
+            }*/
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     cout << "Done" <<endl;
     MPI_Finalize();
