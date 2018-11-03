@@ -73,18 +73,13 @@ int main(int argc, char *argv[])
         }
     }
     //setup mpi
-    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Bcast(users, numRatings, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(items, numRatings, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(csr_users, numUsers + 1, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(csr_items, numItems + 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	
-    int *all_items = new int[numItems];
-    int *all_users = new int[numUsers];
     int process_items = numItems / numProcs + (numItems % numProcs > rank);
     int process_users = numUsers / numProcs + (numUsers % numProcs > rank);
-    int *alloted_items = new int[process_items];
-    int *alloted_users = new int[process_users];
     
     //Divide work
     int *sendcounts_item = new int[numProcs];
@@ -108,17 +103,6 @@ int main(int argc, char *argv[])
             displs_user[i] = displs_user[i - 1] + sendcounts_user[i - 1];
     }
 
-    for (int i = 0; i < numItems; i++) {
-        all_items[i] = i;
-    }
-
-    for (int i = 0; i < numUsers; i++) {
-        all_users[i] = i;
-    }
-
-    MPI_Scatterv(all_items, sendcounts_item, displs_item, MPI_INT, alloted_items, process_items, MPI_INT, MASTER, MPI_COMM_WORLD);
-    MPI_Scatterv(all_users, sendcounts_user, displs_user, MPI_INT, alloted_users, process_users, MPI_INT, MASTER, MPI_COMM_WORLD);
-
     //Call ocular
     uint16_t **fi, **fu;
     uint16_t *item_data = new uint16_t[numItems * CLUSTERS];
@@ -133,7 +117,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numUsers; i++) {
         fu[i] = &(user_data[i * CLUSTERS]);
     }
-    ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, alloted_items, alloted_users, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
+    ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
     if (rank == MASTER) {
         float **fi_float, **fu_float;
         float *item_data_f = new float[numItems * CLUSTERS];

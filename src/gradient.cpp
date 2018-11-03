@@ -12,11 +12,11 @@
 #include "halfUtils.h"
 
 using namespace std;
-void gradient(float **items, float **users, int *allotted, int numItems, int numUser, int totalUser, int *csr_items, int *csr_users, float *user_sum, float **g, MPI_Request &mpi_req, uint16_t **short_users)
+void gradient(float **items, float **users, int start_index, int numItems, int numUser, int totalUser, int *csr_items, int *csr_users, float *user_sum, float **g, MPI_Request &mpi_req, uint16_t **short_users)
 {
     #pragma omp parallel for
     for (int i = 0; i < numItems; i++) {
-        int item = allotted[i];
+        int item = start_index + i;
         for (int j = 0; j < CLUSTERS; j++) {
             g[item][j] =2 * LAMBDA * items[item][j];
             if(isnan(g[item][j]))
@@ -34,7 +34,7 @@ void gradient(float **items, float **users, int *allotted, int numItems, int num
     }
     #pragma omp parallel for
     for (int i = 0; i < numItems; i++) {
-        int item = allotted[i];
+        int item = start_index + i;
         for (int j = 0; j < CLUSTERS; j++){
             g[item][j] += user_sum[j];
             if(isnan(g[item][j]))

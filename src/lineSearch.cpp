@@ -19,26 +19,26 @@ float innerProduct(float *A, float *B, int size) {
 }
 
 void likelihood(float *Q, bool *selected, float *user_sum, float **items, float **users, int numItems,
-                int *item_sparse_csr_r, int *user_sparse_csr_c, int *allotted, int totalItems, bool type) {
+                int *item_sparse_csr_r, int *user_sparse_csr_c, int start_index, int totalItems, bool type) {
     //allotted contains items allotted to the node
     //numItems has items allotted to the node
     //totalItems has total number of items in the dataset
     #pragma omp parallel for
     for (int i = 0; i < numItems; i++) {
         if (selected[i]) {
-            if (type) //true for array which map using allotted array
-                Q[i] = innerProduct(items[allotted[i]], user_sum, CLUSTERS) +
-                       LAMBDA * innerProduct(items[allotted[i]], items[allotted[i]], CLUSTERS);
+            if (type) // true for arrays which are displaced
+                Q[i] = innerProduct(items[start_index + i], user_sum, CLUSTERS) +
+                       LAMBDA * innerProduct(items[start_index + i], items[start_index + i], CLUSTERS);
             else
                 Q[i] = innerProduct(items[i], user_sum, CLUSTERS) + LAMBDA * innerProduct(items[i], items[i], CLUSTERS);
 
-            int start = item_sparse_csr_r[allotted[i]];
-            int end = item_sparse_csr_r[allotted[i] + 1];
+            int start = item_sparse_csr_r[start_index + i];
+            int end = item_sparse_csr_r[start_index + i + 1];
             for (int j = start; j < end; j++) {
                 int uid = user_sparse_csr_c[j];
                 float x;
                 if (type)
-                    x = innerProduct(items[allotted[i]], users[uid], CLUSTERS);
+                    x = innerProduct(items[start_index + i], users[uid], CLUSTERS);
                 else
                     x = innerProduct(items[i], users[uid], CLUSTERS);
                 float y = Q[i];
@@ -48,11 +48,10 @@ void likelihood(float *Q, bool *selected, float *user_sum, float **items, float 
     }
 }
 
-void linesearch(float **items, float *user_sum, float **users, float **gradient, int numItems, int *allotted, int totalItems,
+void linesearch(float **items, float *user_sum, float **users, float **gradient, int numItems, int start_index, int totalItems,
            int *item_sparse_csr_r, int *user_sparse_csr_c) {
     //numItems is number of items allotted to the node
     //totalItems is number of items in all
-    //allotted contains items allotted to the node
     float **newItems, **tempItems;
     tempItems = new float *[numItems];
     newItems = new float *[numItems];
@@ -65,7 +64,7 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
     memset(active, true, numItems * sizeof(bool));
     float *Q = new float[numItems];
     float *Q2 = new float[numItems];
-    likelihood(Q, active, user_sum, items, users, numItems, item_sparse_csr_r, user_sparse_csr_c, allotted, totalItems,
+    likelihood(Q, active, user_sum, items, users, numItems, item_sparse_csr_r, user_sparse_csr_c, start_index, totalItems,
                true);
     double alpha = 1;
     bool flag = true;
@@ -75,24 +74,24 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
         for (int i = 0; i < numItems; i++) {
             if (active[i])
                 for (int j = 0; j < CLUSTERS; j++) {
-                    assert(!isnan(gradient[allotted[i]][j]));
-                    float newVal = items[allotted[i]][j] - alpha * gradient[allotted[i]][j];
+                    assert(!isnan(gradient[start_index + i][j]));
+                    float newVal = items[start_index + i][j] - alpha * gradient[start_index + i][j];
                     newItems[i][j] = max(newVal, 0.0f);
                     //if(isnan(newItems[i][j]))
                     //  std::cout<<i << " " <<j<<std::endl;
                     //assert(!isnan(newItems[i][j]));
                 }
         }
-        likelihood(Q2, active, user_sum, newItems, users, numItems, item_sparse_csr_r, user_sparse_csr_c, allotted,
+        likelihood(Q2, active, user_sum, newItems, users, numItems, item_sparse_csr_r, user_sparse_csr_c, start_index,
                    totalItems, false);
         int reduce_remove=0;
         #pragma omp parallel for reduction( + : reduce_remove)
         for (int i = 0; i < numItems; i++) {
             if (active[i]) {
                 for (int j = 0; j < CLUSTERS; j++)
-                    tempItems[i][j] = newItems[i][j] - items[allotted[i]][j];
+                    tempItems[i][j] = newItems[i][j] - items[start_index + i][j];
                     
-                if (Q2[i] - Q[i] <= SIGMA * innerProduct(gradient[allotted[i]], tempItems[i], CLUSTERS)) {
+                if (Q2[i] - Q[i] <= SIGMA * innerProduct(gradient[start_index + i], tempItems[i], CLUSTERS)) {
                     active[i] = false;
                     reduce_remove++;
                 }
@@ -111,7 +110,7 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
     delete[] Q2;
     for (int i = 0; i < numItems; i++) {
         for (int j = 0; j < CLUSTERS; j++) {
-            items[allotted[i]][j] = newItems[i][j];
+            items[start_index + i][j] = newItems[i][j];
         }
     }
 
