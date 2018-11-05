@@ -41,7 +41,7 @@ void gradient(float **items, float **users, int start_index, int numItems, int n
                 factor=-factor;
             for (int j = 0; j < CLUSTERS; j++) {
                 if(users[user][j]==0 or factor==0)
-                    g[item][j]=0;
+                    g[item][j]-= 0;
                 else
                     g[item][j] -= users[user][j] * factor;
             }
