@@ -74,12 +74,9 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
         for (int i = 0; i < numItems; i++) {
             if (active[i])
                 for (int j = 0; j < CLUSTERS; j++) {
-                    assert(!isnan(gradient[start_index + i][j]));
                     float newVal = items[start_index + i][j] - alpha * gradient[start_index + i][j];
                     newItems[i][j] = max(newVal, 0.0f);
-                    //if(isnan(newItems[i][j]))
-                    //  std::cout<<i << " " <<j<<std::endl;
-                    //assert(!isnan(newItems[i][j]));
+                    assert(!isnan(newItems[i][j]));
                 }
         }
         likelihood(Q2, active, user_sum, newItems, users, numItems, item_sparse_csr_r, user_sparse_csr_c, start_index,
@@ -100,8 +97,6 @@ void linesearch(float **items, float *user_sum, float **users, float **gradient,
         }
         alpha = alpha * BETA;
         removed+=reduce_remove;
-        //for (int i = 0; i < omp_get_max_threads(); i++)
-        //    sum += removed[i];
         if (removed == numItems)
             flag = false;
     }
