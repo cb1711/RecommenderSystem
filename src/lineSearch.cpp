@@ -6,132 +6,113 @@
 #include <cassert>
 #include <iostream>
 using namespace std;
+
 /*
  *Computes inner product of two given vectors A,B of size
 */
-float innerProduct(float *A, float *B, int size)
-{
-	float val = 0;
-	// #pragma omp parallel for reduction(+:val)
-	for (int i = 0; i < size; i++)
-	{
-		val = val + A[i] * B[i];
-	}
-	return val;
-}
-void likelihood(float *Q, bool *selected, float *user_sum, float **items, float **users, int numItems, int *item_sparse_csr_r, int *user_sparse_csr_c, int *allotted, int totalItems, bool type)
-{
-	//allotted contains items allotted to the node
-	//numItems has items allotted to the node
-	//totalItems has total number of items in the dataset
-	//k is number of co-clusters
-	for (int i = 0; i < numItems; i++)
-	{
-		if (selected[i] == true)
-		{
-			if (type) //true for array which map using allotted array
-				Q[i] = innerProduct(items[allotted[i]], user_sum, CLUSTERS) + LAMBDA * innerProduct(items[allotted[i]], items[allotted[i]], CLUSTERS);
-			else
-				Q[i] = innerProduct(items[i], user_sum, CLUSTERS) + LAMBDA * innerProduct(items[i], items[i], CLUSTERS);
-
-			int start = item_sparse_csr_r[allotted[i]];
-			int end = item_sparse_csr_r[allotted[i] + 1];
-			for (int j = start; j < end; j++)
-			{
-				int uid = user_sparse_csr_c[j];
-				float x;
-				if (type)
-					x = innerProduct(items[allotted[i]], users[uid], CLUSTERS);
-				else
-					x = innerProduct(items[i], users[uid], CLUSTERS);
-				float y = Q[i];
-				Q[i] = Q[i] - x - log(1 - pow(M_E, -x)); //Replace with efficient implementation of e^x
-			}
-		}
-	}
+float innerProduct(float *A, float *B, int size) {
+    float val = 0;
+    for (int i = 0; i < size; i++) {
+        val = val + A[i] * B[i];
+    }
+    return val;
 }
 
-void linesearch(float **items, float *user_sum, float **users, float **gradient, int numItems, int *allotted, int totalItems, int *item_sparse_csr_r, int *user_sparse_csr_c)
-{
-	//numItems is number of items allotted to the node
-	//totalItems is number of items in all
-	//allotted contains items allotted to the node
-	float **newItems, **tempItems;
-	tempItems = new float *[numItems];
-	newItems = new float *[numItems];
-	int removed[omp_get_max_threads()];
-	memset(removed, 0, sizeof removed);
-	for (int i = 0; i < numItems; i++)
-	{
-		newItems[i] = new float[CLUSTERS];
-		tempItems[i] = new float[CLUSTERS];
-	}
-	bool *active = new bool[numItems];
-	memset(active, true, numItems * sizeof(bool));
-	float *Q = new float[numItems];
-	float *Q2 = new float[numItems];
-	likelihood(Q, active, user_sum, items, users, numItems, item_sparse_csr_r, user_sparse_csr_c, allotted, totalItems, true);
-	double alpha = 1;
-	bool flag = true;
+void likelihood(float *Q, bool *selected, float *user_sum, float **items, float **users, int numItems,
+                int *item_sparse_csr_r, int *user_sparse_csr_c, int start_index, int totalItems, bool type) {
+    //allotted contains items allotted to the node
+    //numItems has items allotted to the node
+    //totalItems has total number of items in the dataset
+    #pragma omp parallel for
+    for (int i = 0; i < numItems; i++) {
+        if (selected[i]) {
+            if (type) // true for arrays which are displaced
+                Q[i] = innerProduct(items[start_index + i], user_sum, CLUSTERS) +
+                       LAMBDA * innerProduct(items[start_index + i], items[start_index + i], CLUSTERS);
+            else
+                Q[i] = innerProduct(items[i], user_sum, CLUSTERS) + LAMBDA * innerProduct(items[i], items[i], CLUSTERS);
 
-	while (flag)
-	{
-#pragma omp parallel for
-		for (int i = 0; i < numItems; i++)
-		{
-			if (active[i])
-				for (int j = 0; j < CLUSTERS; j++)
-				{
-					//assert(isnan(gradient[allotted[i]][j]));
-					newItems[i][j] = (items[allotted[i]][j] - alpha * gradient[allotted[i]][j]) > 0.0 ? (items[allotted[i]][j] - alpha * gradient[allotted[i]][j]) : 0.0;
-				}
-		}
-		likelihood(Q2, active, user_sum, newItems, users, numItems, item_sparse_csr_r, user_sparse_csr_c, allotted, totalItems, false);
-#pragma omp parallel
-		{
-#pragma omp for
-			for (int i = 0; i < numItems; i++)
-			{
-				if (active[i])
-					for (int j = 0; j < CLUSTERS; j++)
-						tempItems[i][j] = newItems[i][j] - items[allotted[i]][j];
-			}
-#pragma omp for
-			for (int i = 0; i < numItems; i++)
-			{
-				if (active[i])
-				{
-					if (Q2[i] - Q[i] <= SIGMA * innerProduct(gradient[allotted[i]], tempItems[i], CLUSTERS))
-					{
-						active[i] = false;
-						removed[omp_get_thread_num()]++;
-					}
-				}
-			}
-		}
-		alpha = alpha * BETA;
-		int sum = 0;
-		for (int i = 0; i < omp_get_max_threads(); i++)
-			sum += removed[i];
-		if (sum == numItems)
-			flag = false;
-	}
-	delete[] active;
-	delete[] Q;
-	delete[] Q2;
-	for (int i = 0; i < numItems; i++)
-	{
-		for (int j = 0; j < CLUSTERS; j++)
-		{
-			items[allotted[i]][j] = newItems[i][j];
-		}
-	}
+            int start = item_sparse_csr_r[start_index + i];
+            int end = item_sparse_csr_r[start_index + i + 1];
+            for (int j = start; j < end; j++) {
+                int uid = user_sparse_csr_c[j];
+                float x;
+                if (type)
+                    x = innerProduct(items[start_index + i], users[uid], CLUSTERS);
+                else
+                    x = innerProduct(items[i], users[uid], CLUSTERS);
+                float y = Q[i];
+                Q[i] = Q[i] - x - log(1 - exp(-x)); //Replace with efficient implementation of e^x
+            }
+        }
+    }
+}
 
-	for (int i = 0; i < numItems; i++)
-	{
-		delete[] newItems[i];
-		delete[] tempItems[i];
-	}
-	delete[] newItems;
-	delete[] tempItems;
+void linesearch(float **items, float *user_sum, float **users, float **gradient, int numItems, int start_index, int totalItems,
+           int *item_sparse_csr_r, int *user_sparse_csr_c) {
+    //numItems is number of items allotted to the node
+    //totalItems is number of items in all
+    float **newItems, **tempItems;
+    tempItems = new float *[numItems];
+    newItems = new float *[numItems];
+
+    for (int i = 0; i < numItems; i++) {
+        newItems[i] = new float[CLUSTERS];
+        tempItems[i] = new float[CLUSTERS];
+    }
+    bool *active = new bool[numItems];
+    memset(active, true, numItems * sizeof(bool));
+    float *Q = new float[numItems];
+    float *Q2 = new float[numItems];
+    likelihood(Q, active, user_sum, items, users, numItems, item_sparse_csr_r, user_sparse_csr_c, start_index, totalItems,
+               true);
+    double alpha = 1;
+    bool flag = true;
+    int removed = 0;
+    while (flag) {
+        #pragma omp parallel for
+        for (int i = 0; i < numItems; i++) {
+            if (active[i])
+                for (int j = 0; j < CLUSTERS; j++) {
+                    float newVal = items[start_index + i][j] - alpha * gradient[start_index + i][j];
+                    newItems[i][j] = max(newVal, 0.0f);
+                    assert(!isnan(newItems[i][j]));
+                }
+        }
+        likelihood(Q2, active, user_sum, newItems, users, numItems, item_sparse_csr_r, user_sparse_csr_c, start_index,
+                   totalItems, false);
+        int reduce_remove=0;
+        #pragma omp parallel for reduction( + : reduce_remove)
+        for (int i = 0; i < numItems; i++) {
+            if (active[i]) {
+                for (int j = 0; j < CLUSTERS; j++)
+                    tempItems[i][j] = newItems[i][j] - items[start_index + i][j];
+                    
+                if (Q2[i] - Q[i] <= SIGMA * innerProduct(gradient[start_index + i], tempItems[i], CLUSTERS)) {
+                    active[i] = false;
+                    reduce_remove++;
+                }
+                
+            }
+        }
+        alpha = alpha * BETA;
+        removed+=reduce_remove;
+        if (removed == numItems)
+            flag = false;
+    }
+    delete[] active;
+    delete[] Q;
+    delete[] Q2;
+    for (int i = 0; i < numItems; i++) {
+        for (int j = 0; j < CLUSTERS; j++) {
+            items[start_index + i][j] = newItems[i][j];
+        }
+    }
+
+    for (int i = 0; i < numItems; i++) {
+        delete[] newItems[i];
+        delete[] tempItems[i];
+    }
+    delete[] newItems;
+    delete[] tempItems;
 }

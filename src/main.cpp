@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iomanip>
 #include <fstream>
+#include "halfUtils.h"
 #define MASTER 0
 
 using namespace std;
@@ -18,7 +19,7 @@ int main(int argc, char *argv[])
     ifstream inFile;
     int tempTransfer[] = {0, 0, 0};
     if (rank == MASTER) {
-        inFile.open("data/data");
+        inFile.open("data/d2");
         if(!inFile) {
             cerr<<"Couldn't open file" << endl;
             exit(0);
@@ -72,18 +73,13 @@ int main(int argc, char *argv[])
         }
     }
     //setup mpi
-    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Bcast(users, numRatings, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(items, numRatings, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(csr_users, numUsers + 1, MPI_INT, MASTER, MPI_COMM_WORLD);
     MPI_Bcast(csr_items, numItems + 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	
-    int *all_items = new int[numItems];
-    int *all_users = new int[numUsers];
     int process_items = numItems / numProcs + (numItems % numProcs > rank);
     int process_users = numUsers / numProcs + (numUsers % numProcs > rank);
-    int *alloted_items = new int[process_items];
-    int *alloted_users = new int[process_users];
     
     //Divide work
     int *sendcounts_item = new int[numProcs];
@@ -107,59 +103,55 @@ int main(int argc, char *argv[])
             displs_user[i] = displs_user[i - 1] + sendcounts_user[i - 1];
     }
 
-    for (int i = 0; i < numItems; i++) {
-        all_items[i] = i;
-    }
-
-    for (int i = 0; i < numUsers; i++) {
-        all_users[i] = i;
-    }
-
-    MPI_Scatterv(all_items, sendcounts_item, displs_item, MPI_INT, alloted_items, process_items, MPI_INT, MASTER, MPI_COMM_WORLD);
-    MPI_Scatterv(all_users, sendcounts_user, displs_user, MPI_INT, alloted_users, process_users, MPI_INT, MASTER, MPI_COMM_WORLD);
-
     //Call ocular
-    float **fi, **fu;
-    float *item_data = new float[numItems * CLUSTERS];
-    float *user_data = new float[numUsers * CLUSTERS];
+    uint16_t **fi, **fu;
+    uint16_t *item_data = new uint16_t[numItems * CLUSTERS];
+    uint16_t *user_data = new uint16_t[numUsers * CLUSTERS];
 
-    fi = new float *[numItems];
-    fu = new float *[numUsers];
+    fi = new uint16_t *[numItems];
+    fu = new uint16_t *[numUsers];
+
     for (int i = 0; i < numItems; i++) {
         fi[i] = &(item_data[i * CLUSTERS]);
     }
     for (int i = 0; i < numUsers; i++) {
         fu[i] = &(user_data[i * CLUSTERS]);
     }
-    ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, alloted_items, alloted_users, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
+    ocular(numItems, numUsers, csr_items, users, csr_users, items, fi, fu, process_items, process_users, sendcounts_item, sendcounts_user, displs_item, displs_user, rank, numProcs);
     if (rank == MASTER) {
-        cout << "Printing fi\n";
+        float **fi_float, **fu_float;
+        float *item_data_f = new float[numItems * CLUSTERS];
+        float *user_data_f = new float[numUsers * CLUSTERS];
+
+        fi_float = new float *[numItems];
+        fu_float = new float *[numUsers];
+        
         for (int i = 0; i < numItems; i++) {
-            for (int j = 0; j < CLUSTERS; j++) {
-                cout << fi[i][j] << " ";
-            }
-            cout << endl;
+            fi_float[i] = &(item_data_f[i * CLUSTERS]);
         }
-
-        cout << "Printing fu\n";
         for (int i = 0; i < numUsers; i++) {
-            for (int j = 0; j < CLUSTERS; j++) {
-                cout << fu[i][j] << " ";
-            }
-            cout << endl;
+            fu_float[i] = &(user_data_f[i * CLUSTERS]);
         }
-
-        int user_id, item_id;
+        half2floatv(fu_float[0],fu[0],numUsers*CLUSTERS);
+        half2floatv(fi_float[0],fi[0],numItems*CLUSTERS);
+        int user_id, item_id, query_num;
+        /*cout << "Enter the number of queries" << endl;
+        cin >> query_num;
         cout << "Enter the user and item" << endl;
-        while (cin >> item_id >> user_id) {
-            if (user_id < 1 or user_id > numUsers or item_id < 1 or item_id > numItems)
-                break;
+        for(int i=0; i < query_num; i++) {
+            cin >> item_id >> user_id;
+            if (user_id > numUsers or item_id > numItems) {
+                cout << "Query not in range" << endl;
+                continue;
+            }
             user_id--;
             item_id--;
-            float x = innerProduct(fi[item_id], fu[user_id], CLUSTERS);
-            cout << fixed << setprecision(2) << 100 * (1 - pow(M_E, -x)) << endl;
-        }
+            float x = innerProduct(fi_float[item_id], fu_float[user_id], CLUSTERS);
+            cout << fixed << setprecision(2) << 100 * (1 - exp(-x)) << endl;
+            }*/
     }
+    MPI_Barrier(MPI_COMM_WORLD);
+    cout << "Done" <<endl;
     MPI_Finalize();
     return 0;
 }
